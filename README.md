@@ -12,4 +12,10 @@ Documentação (utilizaremos a versão 2.6)
 
 https://phaser.io/docs/2.6.2/index
 
-O objetivo deste Dojo será conhecer e explorar, conjuntamente, a biblioteca Phaser por meio dos exemplos fornecidos no próprio site da biblioteca
+O objetivo deste Dojo será conhecer e explorar, conjuntamente, a biblioteca Phaser por meio dos exemplos fornecidos no próprio site da biblioteca.
+
+Inicialmente vamos estudar o código do exemplo Arcade/Asteroids:
+https://phaser.io/examples/v2/arcade-physics/asteroids-movement
+
+E na sequência fazer algumas alterações adicionando elementos de outros exemplos, a citar:
+https://phaser.io/examples/v2/games/invaders
