@@ -1,0 +1,27 @@
+{ "height":1,
+ "infinite":false,
+ "layers":[],
+ "nextobjectid":1,
+ "orientation":"orthogonal",
+ "renderorder":"right-down",
+ "tiledversion":"1.1.6",
+ "tileheight":600,
+ "tilesets":[
+        {
+         "columns":1,
+         "firstgid":1,
+         "image":"..\/..\/skies\/sky3.png",
+         "imageheight":600,
+         "imagewidth":800,
+         "margin":0,
+         "name":"sky3",
+         "spacing":0,
+         "tilecount":1,
+         "tileheight":600,
+         "tilewidth":800
+        }],
+ "tilewidth":800,
+ "type":"map",
+ "version":1,
+ "width":6
+}
