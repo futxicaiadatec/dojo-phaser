@@ -1,0 +1,317 @@
+<!-- 
+	Exemplo retirado de: https://github.com/photonstorm/phaser-examples/blob/master/examples/arcade%20physics/asteroids%20movement.js
+-->
+<html lang="pt-br">
+	<head>
+		<title>SpaceShips</title>
+		<link rel="shortcut icon" href="../assets/games/asteroids/favicon.ico" type="image/x-icon">
+		<link rel="icon" href="../assets/games/asteroids/favicon.ico" type="image/x-icon">
+		<meta charset="utf-8" />
+	</head>
+	<body>
+		<div id="tela"></div>
+		<script src="../phaser2/phaser.min.js"></script>
+		<style>
+		
+		html, body{
+		margin: 0;
+		}
+
+		</style>
+		<script>
+
+			/*
+				A classe Game contêm basicamente "todo o jogo"
+				No método construtor passamos os seguintes parâmetros: largura, altura, 'engine' (Canvas ou WebGL), elemento HTML, e estados
+			*/
+//
+			var game = new Phaser.Game(document.body.clientWidth, window.innerHeight, Phaser.CANVAS, 'tela', 
+			{ preload: preload, create: create, update: update, render: render });
+			function preload() {
+
+				game.load.image('space', '../assets/skies/deep-space.jpg');
+				game.load.image('bullet', '../assets/games/asteroids/bullets.png');
+				game.load.image('bulleting', '../assets/games/asteroids/bullets.png');				
+				game.load.image('ship', '../assets/games/asteroids/ship.gif');
+				game.load.image('shiping', '../assets/games/asteroids/shipgreen.png');					
+				
+			}
+			
+			var sprite;
+			var spriteing;
+			var cursors;
+
+			var bullet;
+			var bulleting;
+			var bullets;
+			var bulletsing;
+			var bulletTime = 0;
+			var bulletingTime = 0;
+			var audio = new Audio('../assets/games/asteroids/laser.mp3');
+			
+			function create() {
+			
+
+				//  This will run in Canvas mode, so let's gain a little speed and display
+				
+				game.renderer.clearBeforeRender = false;
+				game.renderer.roundPixels = true;
+
+				//  We need arcade physics
+				
+				game.physics.startSystem(Phaser.Physics.ARCADE);
+
+				//  A spacey background
+				
+				game.add.tileSprite(0, 0, game.width, game.height, 'space');
+
+				// First Ship bullets
+				
+				bullets = game.add.group();
+				bullets.enableBody = true;
+				bullets.physicsBodyType = Phaser.Physics.ARCADE;
+				
+				// Second Ship bullets
+				
+				bulletsing = game.add.group();
+				bulletsing.enableBody = true;
+				bulletsing.physicsBodyType = Phaser.Physics.ARCADE;
+				
+				//  First 40 of them
+				
+				bullets.createMultiple(1000, 'bullet');
+				bullets.setAll('anchor.x', 0.5);
+				bullets.setAll('anchor.y', 0.5);
+
+				// Second 40 of them
+				
+				bulletsing.createMultiple(1000, 'bulleting');
+				bulletsing.setAll('anchor.x', 0.5);
+				bulletsing.setAll('anchor.y', 0.5);
+				
+				for (var i=0;i < bullets.children.length;i++) {
+					bullets.children[i].body.collideWorldBounds = true;
+					bullets.children[i].body.kill;
+				}
+				for (var i=0;i < bulletsing.children.length;i++) {
+					bulletsing.children[i].body.collideWorldBounds = true;
+					bulletsing.children[i].kill;
+				}
+
+				//  Our player ship
+				
+				sprite = game.add.sprite((document.body.clientWidth/12), window.innerHeight*.25, 'ship');
+				sprite.anchor.set(0.5);
+				
+				spriteing = game.add.sprite((document.body.clientWidth/12), window.innerHeight*.75, 'shiping');
+				spriteing.anchor.set(0.5);
+
+				//  and its physics settings
+				
+				game.physics.enable(sprite, Phaser.Physics.ARCADE);
+
+				sprite.body.drag.set(100);
+				sprite.body.maxVelocity.set(200);
+				sprite.body.collideWorldBounds = true;
+				sprite.body.bounce.setTo(0.6,0.6);
+				
+				game.physics.enable(spriteing	, Phaser.Physics.ARCADE); //player 2
+				
+                spriteing.body.drag.set(100);
+                spriteing.body.maxVelocity.set(200);
+                spriteing.body.collideWorldBounds = true;
+                spriteing.body.bounce.setTo(0.6,0.6);       
+
+
+				//  Game input
+				
+				this.keyLeft = this.input.keyboard.addKey(Phaser.KeyCode.A);
+				this.keyRight = this.input.keyboard.addKey(Phaser.KeyCode.D);
+				this.keyUp = this.input.keyboard.addKey(Phaser.KeyCode.W);
+				
+				this.keyLefting = this.input.keyboard.addKey(Phaser.KeyCode.left);
+                this.keyRighting = this.input.keyboard.addKey(Phaser.KeyCode.right);
+                this.keyUping = this.input.keyboard.addKey(Phaser.KeyCode.up);
+
+				cursors = game.input.keyboard.createCursorKeys();
+				game.input.keyboard.addKeyCapture([ Phaser.Keyboard.SPACEBAR ]);
+				game.input.keyboard.addKeyCapture([ Phaser.Keyboard.ENTER]);
+
+			}
+
+			function update() {
+			
+			// First Ship
+			
+				if (cursors.up.isDown)
+				{
+					game.physics.arcade.accelerationFromRotation(sprite.rotation, 200, sprite.body.acceleration);
+				}
+				else
+				{
+					sprite.body.acceleration.set(0);
+				}
+
+				if (cursors.left.isDown)
+				{
+					sprite.body.angularVelocity = -300;
+				}
+				else if (cursors.right.isDown)
+				{
+					sprite.body.angularVelocity = 300;
+				}
+				else 	
+				{
+					sprite.body.angularVelocity = 0;
+				}
+
+				if (game.input.keyboard.isDown(Phaser.Keyboard.ENTER))
+				{
+					fireBullet();
+				}
+
+				screenWrap(sprite);
+
+				bullets.forEachExists(screenWrap, this);
+
+			//  Second Ship
+
+				if (this.keyUp.isDown)
+				{
+					game.physics.arcade.accelerationFromRotation(spriteing.rotation, 200, spriteing.body.acceleration);
+				}
+				else
+				{
+					spriteing.body.acceleration.set(0);
+				}
+
+				if (this.keyLeft.isDown)
+				{
+					spriteing.body.angularVelocity = -300;
+				}
+				else if (this.keyRight.isDown)
+				{
+					spriteing.body.angularVelocity = 300;
+				}
+				else
+				{
+					spriteing.body.angularVelocity = 0;
+				}
+
+				if (game.input.keyboard.isDown(Phaser.Keyboard.SPACEBAR))
+				{
+					fireBulleting();
+				}
+
+				screenWraping(sprite);
+
+				bulletsing.forEachExists(screenWraping, this);
+		
+				game.physics.arcade.collide(sprite, spriteing);
+				game.physics.arcade.collide(sprite, bulletsing);
+                game.physics.arcade.collide(spriteing, bullets);
+				game.physics.arcade.collide(sprite, bulleting);
+                game.physics.arcade.collide(spriteing, bullet);
+				
+				if (game.input.keyboard.isDown(Phaser.Keyboard.ENTER))
+                {
+					if(game.input.keyboard.isDown(Phaser.Keyboard.ENTER)){
+                    audio.play();
+                    }
+                    fireBullet();
+                }
+				
+			}
+			 
+			function fireBulleting () {
+
+				if (game.time.now > bulletingTime)
+				{
+					bulleting = bulletsing.getFirstExists(false);
+
+					if (bulleting)
+					{
+						bulleting.reset(spriteing.body.x + 16, spriteing.body.y + 16);
+						bulleting.lifespan = 2000000;
+						bulleting.rotation = spriteing.rotation;
+						game.physics.arcade.velocityFromRotation(spriteing.rotation, 400, bulleting.body.velocity);
+						bulletiTimeTime = game.time.now + 40;
+					}
+				}
+
+			}
+
+			function fireBullet () {
+
+				if (game.time.now > bulletTime){
+					
+				bullet = bullets.getFirstExists(false);
+
+					if (bullet){
+					
+						bullet.reset(sprite.body.x + 16, sprite.body.y + 16);
+						bullet.lifespan = 2000000;
+						bullet.rotation = sprite.rotation;
+						game.physics.arcade.velocityFromRotation(sprite.rotation, 400, bullet.body.velocity);
+						bulletTime = game.time.now + 40;
+						
+					}
+				}
+			console.log(bullet);
+				if (bullet.height == 0)
+				bulletTime = 0;
+			
+			}
+
+			function screenWrap (sprite) {
+
+				if (sprite.x < 0)
+				{
+					sprite.x = game.width;
+				}
+				else if (sprite.x > game.width)
+				{
+					sprite.x = 0;
+				}
+
+				if (sprite.y < 0)
+				{
+					sprite.y = game.height;
+				}
+				else if (sprite.y > game.height)
+				{
+					sprite.y = 0;
+				}
+
+			}
+			
+			function screenWraping (spriteing) {
+
+				if (spriteing.x < 0)
+				{
+					spriteing.x = game.width;
+				}
+				else if (spriteing.x > game.width)
+				{
+					spriteing.x = 0;
+				}
+
+				if (spriteing.y < 0)
+				{
+					spriteing.y = game.height;
+				}
+				else if (spriteing.y > game.height)
+				{
+					spriteing.y = 0;
+				}
+
+			}
+
+			function render() {
+			
+			}
+ 
+
+		</script>
+	</body>
+</html>
