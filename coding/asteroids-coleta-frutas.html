@@ -1,0 +1,280 @@
+<!-- 
+	Exemplo retirado de: https://github.com/photonstorm/phaser-examples/blob/master/examples/arcade%20physics/asteroids%20movement.js
+-->
+<html lang="pt-br">
+	<head>
+		<title>Phaser - Primeiro Exemplo</title>
+		<meta charset="utf-8" />
+	</head>
+	<body>
+		<div id="tela"></div>
+		<script src="../phaser2/phaser.min.js"></script>
+		<script>
+
+			/*
+				A classe Game contêm basicamente "todo o jogo"
+				No método construtor passamos os seguintes parâmetros: largura, altura, 'engine' (Canvas ou WebGL), elemento HTML, e estados
+			*/
+
+			var game = new Phaser.Game(800, 600, Phaser.CANVAS, 'tela', { preload: preload, create: create, update: update, render: render });
+
+			function preload() {
+
+				//imagens para serem utilizadas como sprites
+				game.load.image('space', '../assets/skies/deep-space.jpg');
+				game.load.image('ball', '../assets/sprites/red_ball.png');
+				game.load.image('bullet', '../assets/games/asteroids/bullets.png');
+				game.load.image('ship', '../assets/games/asteroids/ship.png');
+				game.load.image('fruta', '../assets/sprites/pineapple.png');
+				
+				//sequência de imagens para ser utilizada em sprites animados
+				game.load.spritesheet('kaboom', '../assets/sprites/explode.png', 128, 128);
+				game.load.spritesheet('kaboom', '../assets/sprites/explode.png', 128, 128);
+
+			}
+
+
+
+			var sprite;
+			var cursors;
+
+			var bullet;
+			var bullets;
+			var bulletTime = 0;
+
+			var explosions;
+			var explosion;
+
+			var frutas;
+			var fruta;
+			var totalFrutas=0;
+
+			var score = 0;
+			var scoreString = '';
+			var scoreText;			
+
+			function create() {
+
+				//  This will run in Canvas mode, so let's gain a little speed and display
+				game.renderer.clearBeforeRender = false;
+				game.renderer.roundPixels = true;
+
+				//  We need arcade physics
+				game.physics.startSystem(Phaser.Physics.ARCADE);
+
+				//  A spacey background
+				game.add.tileSprite(0, 0, game.width, game.height, 'space');
+
+				//  Our ships bullets
+				bullets = game.add.group();
+				bullets.enableBody = true;
+				bullets.physicsBodyType = Phaser.Physics.ARCADE;
+
+				//  All 40 of them
+				bullets.createMultiple(40, 'bullet');
+				bullets.setAll('anchor.x', 0.5);
+				bullets.setAll('anchor.y', 0.5);
+
+				frutas = game.add.group();
+				frutas.enableBody = true;
+				frutas.physicsBodyType = Phaser.Physics.ARCADE;
+
+				frutas.createMultiple(40,'fruta');
+				frutas.setAll('anchor.x', 0.5);
+				frutas.setAll('anchor.y', 0.5);	
+
+				frutas.forEach(function (item) {item.events.onKilled.add(function() { totalFrutas--; }, this);}, this, false );			
+
+				//  An explosion pool
+				explosions = game.add.group();
+				explosions.createMultiple(30, 'kaboom');
+				//explosions.forEach(setupInvader, this);
+
+				explosions.forEach(
+					function(item) {
+						item.anchor.x = 0.5;
+						item.anchor.y = 0.5;
+						item.animations.add('kaboom');						
+					}
+				);				
+
+				// explosion = game.add.sprite(128,128,'kaboom');	
+				// explosion.animations.add('kaboom');
+				// explosion.animations.play('kaboom', [ 0, 1, 2, 3 ], 1, true);
+
+				for (var i=0;i < bullets.children.length;i++) {
+					//bullets.children[i].body.collideWorldBounds = true;
+					//bullets.children[i].body.bounce.setTo(0.6,0.6);
+					//bullets.children[i].animations.add('kaboom');
+				}
+				
+
+				//  Our player ship
+				sprite = game.add.sprite(300, 300, 'ship');
+				sprite.anchor.set(0.5);
+
+				//  and its physics settings
+				game.physics.enable(sprite, Phaser.Physics.ARCADE);
+
+				sprite.body.drag.set(100);
+				sprite.body.maxVelocity.set(200);
+				sprite.body.collideWorldBounds = true;
+				sprite.body.bounce.setTo(0.6,0.6);		
+
+
+
+				//  Game input
+				cursors = game.input.keyboard.createCursorKeys();
+				game.input.keyboard.addKeyCapture([ Phaser.Keyboard.SPACEBAR ]);
+
+
+				scoreString = 'Score : ';
+				scoreText = game.add.text(10, 10, scoreString + score, { font: '34px Arial', fill: '#fff' });				
+
+			}
+
+			function update() {
+
+				if (cursors.up.isDown)
+				{
+					game.physics.arcade.accelerationFromRotation(sprite.rotation, 200, sprite.body.acceleration);
+				}
+				else
+				{
+					sprite.body.acceleration.set(0);
+				}
+
+				if (cursors.left.isDown)
+				{
+					sprite.body.angularVelocity = -300;
+				}
+				else if (cursors.right.isDown)
+				{
+					sprite.body.angularVelocity = 300;
+				}
+				else
+				{
+					sprite.body.angularVelocity = 0;
+				}
+
+				if (game.input.keyboard.isDown(Phaser.Keyboard.SPACEBAR))
+				{
+					fireBullet();
+				}
+
+				screenWrap(sprite);
+
+				bullets.forEachExists(screenWrap, this);
+
+				gerarFrutas();
+
+				game.physics.arcade.overlap(sprite, frutas, coletarFrutas, null, this);
+
+			}
+
+			function fireBullet () {
+
+				if (game.time.now > bulletTime)
+				{
+					bullet = bullets.getFirstExists(false);
+
+					if (bullet)
+					{
+						bullet.reset(sprite.body.x + 16, sprite.body.y + 16);
+						bullet.lifespan = 2000;
+						bullet.rotation = sprite.rotation;
+						game.physics.arcade.velocityFromRotation(sprite.rotation, 400, bullet.body.velocity);
+						bulletTime = game.time.now + 50;
+					}
+				}
+
+			}
+
+			function gerarFrutas() {
+
+				if (totalFrutas < 5) {
+
+					fruta = frutas.getFirstExists(false);
+
+					var w = game.rnd.integerInRange(10,(game.width-10));
+					var h = game.rnd.integerInRange(10,(game.height-10));
+
+					fruta.reset(w,h);
+
+					fruta.lifespan = game.rnd.integerInRange(2,6)*1000;
+
+					totalFrutas++;
+
+				}
+
+			}
+
+			function coletarFrutas(ship,fruta) {
+				console.log("entrou!");
+				score++;
+				fruta.kill();
+				scoreText.text = scoreString + score;
+			}
+
+			function screenWrap (sprite) {
+			
+
+				if (sprite.key == 'bullet') {
+					//console.log(sprite.x);
+					if (sprite.x >= 790 || sprite.x <= 10 || sprite.y >= 590 || sprite.y <= 10) {
+						//bullet = bullets.getFirstExists(false);
+						//bullet.animations.play('kaboom');
+						//explosion.animations.play('kaboom', [ 0, 1, 2, 3 ], 1, true);
+						//sprite.loadTexture('ball');	
+
+						sprite.kill();
+
+						var explosion = explosions.getFirstExists(false);
+						explosion.reset(sprite.body.x, sprite.body.y);
+						explosion.play('kaboom', 30, false, true);						
+
+					}
+
+					
+
+				}
+
+
+				//console.log(sprite.body.velocity.x);
+
+				// if (sprite.key == 'bullet') {
+				// 	if (sprite.body.velocity.x < 0 || sprite.body.velocity.y < 0) {
+				// 		sprite.loadTexture('ball');					
+				// 	}
+				// }
+
+				//console.log(sprite.key);
+				
+
+
+				// if (sprite.x < 0)
+				// {
+				// 	sprite.x = game.width;
+				// }
+				// else if (sprite.x > game.width)
+				// {
+				// 	sprite.x = 0;
+				// }
+
+				// if (sprite.y < 0)
+				// {
+				// 	sprite.y = game.height;
+				// }
+				// else if (sprite.y > game.height)
+				// {
+				// 	sprite.y = 0;
+				// }
+
+			}
+
+			function render() {
+			}
+
+		</script>
+	</body>
+</html>
