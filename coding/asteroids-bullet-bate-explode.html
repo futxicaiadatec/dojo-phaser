@@ -69,7 +69,7 @@
 				//explosions.forEach(setupInvader, this);
 
 				explosions.forEach(
-					function(item) {
+					(item) => {
 						item.anchor.x = 0.5;
 						item.anchor.y = 0.5;
 						item.animations.add('kaboom');						
@@ -98,7 +98,6 @@
 				sprite.body.maxVelocity.set(200);
 				sprite.body.collideWorldBounds = true;
 				sprite.body.bounce.setTo(0.6,0.6);		
-
 
 
 				//  Game input

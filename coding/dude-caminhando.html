@@ -21,7 +21,8 @@ var game = new Phaser.Game(800, 600, Phaser.CANVAS, 'tela', { preload: preload, 
 function preload() {
 
     game.load.spritesheet('dude', '../assets/sprites/dude.png', 32, 48);
-    game.load.image('background', '../assets/skies/sky5.png');
+    game.load.image('tiles-terreno', '../assets/maps/terreno.png');
+	game.load.tilemap('ceu-escurecendo', '../assets/tiles/maps/mapa-dude.json', null, Phaser.Tilemap.TILED_JSON);
 
 }
 
@@ -31,6 +32,9 @@ var jumpTimer = 0;
 var cursors;
 var jumpButton;
 var bg;
+var map;
+
+var layer
 
 function create() {
 
@@ -38,7 +42,15 @@ function create() {
 
     game.time.desiredFps = 30;
 
-    bg = game.add.tileSprite(0, 0, 800, 600, 'background');
+    //bg = game.add.tileSprite(0, 0, 800, 600, 'background');
+	map = game.add.tilemap('ceu-escurecendo');
+	map.addTilesetImage('terreno', 'tiles-terreno');
+	
+    layer = map.createLayer('Camada de Tiles 1');
+
+    layer.resizeWorld();
+
+    layer.wrap = true;	
 
     game.physics.arcade.gravity.y = 0;
 	//game.physics.arcade.gravity.x = 90;
@@ -67,6 +79,7 @@ function update() {
 	if (cursors.left.isDown)
 	{
 		player.body.velocity.x = -150;
+		game.camera.x -= 5;
 
 		if (facing != 'left')
 		{
@@ -77,6 +90,7 @@ function update() {
 	else if (cursors.right.isDown)
 	{
 		player.body.velocity.x = 150;
+		game.camera.x += 5;
 
 		if (facing != 'right')
 		{
